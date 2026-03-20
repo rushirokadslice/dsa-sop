@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>slice DSA — SOP Guide (Live)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --brand: #6C2BD9;
+    --brand-light: #EDE9FF;
+    --brand-mid: #9B6EF3;
+    --surface: #FFFFFF;
+    --surface2: #F7F6FB;
+    --surface3: #EFECF8;
+    --border: #E4E0F0;
+    --text: #1A1525;
+    --text2: #6B6580;
+    --text3: #9B95B0;
+    --warning: #F59E0B;
+    --warning-bg: #FFFBEB;
+    --success: #10B981;
+    --success-bg: #ECFDF5;
+    --danger: #EF4444;
+    --danger-bg: #FEF2F2;
+    --tag-bg: #EDE9FF;
+    --tag-text: #5B21B6;
+    --shadow-sm: 0 1px 3px rgba(108,43,217,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 16px rgba(108,43,217,0.1), 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 32px rgba(108,43,217,0.15), 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface2);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Loading Screen ── */
+  #loadingScreen {
+    position: fixed; inset: 0;
+    background: var(--surface);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 999;
+    gap: 16px;
+  }
+
+  .loader-logo {
+    width: 52px; height: 52px;
+    background: var(--brand);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  .loader-logo svg { width: 26px; height: 26px; }
+
+  #loadingScreen h2 {
+    font-size: 18px; font-weight: 700; color: var(--text);
+    letter-spacing: -0.4px;
+  }
+
+  #loadingStatus {
+    font-size: 13px; color: var(--text3);
+  }
+
+  .progress-bar {
+    width: 200px; height: 3px;
+    background: var(--surface3); border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%; background: var(--brand);
+    border-radius: 2px;
+    animation: progressAnim 1.6s ease-in-out infinite;
+  }
+
+  @keyframes progressAnim {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 70%; margin-left: 0; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  /* ── Error Screen ── */
+  #errorScreen {
+    position: fixed; inset: 0;
+    background: var(--surface);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 999; gap: 12px; padding: 24px; text-align: center;
+  }
+
+  #errorScreen .err-icon {
+    font-size: 40px; margin-bottom: 4px;
+  }
+
+  #errorScreen h2 { font-size: 18px; font-weight: 700; color: var(--text); }
+  #errorScreen p { font-size: 13px; color: var(--text2); max-width: 420px; line-height: 1.6; }
+  #errorScreen code {
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 6px;
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--brand);
+    display: block; max-width: 500px; word-break: break-all;
+  }
+
+  .retry-btn {
+    margin-top: 8px;
+    background: var(--brand); color: white;
+    border: none; border-radius: 8px;
+    padding: 10px 24px; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .retry-btn:hover { opacity: 0.85; }
+
+  /* ── Live Badge ── */
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; gap: 20px;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  .logo-icon {
+    width: 32px; height: 32px; background: var(--brand);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  }
+
+  .logo-icon svg { width: 18px; height: 18px; }
+
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .logo-text span { color: var(--brand); }
+
+  .header-divider { width: 1px; height: 24px; background: var(--border); }
+
+  .search-wrap { flex: 1; max-width: 520px; position: relative; }
+
+  .search-wrap svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text3); width: 16px; height: 16px;
+  }
+
+  #globalSearch {
+    width: 100%; padding: 8px 12px 8px 36px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; color: var(--text);
+    background: var(--surface2); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #globalSearch:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(108,43,217,0.12);
+    background: #fff;
+  }
+
+  #globalSearch::placeholder { color: var(--text3); }
+
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+  .pill {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--brand-light); color: var(--brand);
+    padding: 5px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+
+  .live-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--success-bg); color: var(--success);
+    padding: 5px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+
+  .refresh-btn {
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 6px 12px;
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s;
+  }
+
+  .refresh-btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
+  .refresh-btn svg { width: 13px; height: 13px; }
+  .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Layout ── */
+  .app-body { display: flex; flex: 1; }
+
+  /* ── Sidebar ── */
+  aside {
+    width: 240px; flex-shrink: 0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: sticky; top: 60px;
+    height: calc(100vh - 60px); overflow-y: auto;
+  }
+
+  .nav-section { padding: 8px; border-bottom: 1px solid var(--border); }
+
+  .nav-section-label {
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    letter-spacing: 0.8px; text-transform: uppercase;
+    padding: 8px 8px 4px;
+  }
+
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--text2);
+    transition: all 0.15s; border: none; background: none;
+    width: 100%; text-align: left;
+  }
+
+  .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { background: var(--brand-light); color: var(--brand); font-weight: 600; }
+  .nav-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .nav-count {
+    margin-left: auto;
+    background: var(--surface3); color: var(--text3);
+    font-size: 11px; font-weight: 600; padding: 1px 7px;
+    border-radius: 10px; font-family: 'DM Mono', monospace;
+  }
+
+  .nav-btn.active .nav-count { background: rgba(108,43,217,0.15); color: var(--brand); }
+
+  .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-Account { background: #6C2BD9; }
+  .dot-Transaction { background: #0EA5E9; }
+  .dot-Delivery { background: #F59E0B; }
+  .dot-Fraud { background: #EF4444; }
+  .dot-Onboarding { background: #10B981; }
+  .dot-Rewards { background: #EC4899; }
+  .dot-General { background: #8B5CF6; }
+
+  /* ── Main ── */
+  main { flex: 1; padding: 24px; overflow-y: auto; max-height: calc(100vh - 60px); }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; }
+  .section-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  .result-count { font-size: 13px; color: var(--text3); font-weight: 500; }
+
+  .sop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+
+  .sop-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    cursor: pointer; transition: all 0.18s;
+    position: relative; overflow: hidden;
+  }
+
+  .sop-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--cat-color, var(--brand));
+    border-radius: 3px 0 0 3px;
+  }
+
+  .sop-card:hover {
+    border-color: var(--brand-mid); box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
+
+  .card-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+
+  .card-id {
+    font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+    color: var(--brand); background: var(--brand-light);
+    padding: 2px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+  }
+
+  .card-sit {
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    letter-spacing: 0.5px; padding: 2px 6px;
+    background: var(--surface3); border-radius: 4px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+
+  .card-sit.REF { background: #FFF7ED; color: #C2410C; }
+
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+
+  .card-desc {
+    font-size: 12.5px; color: var(--text2); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .card-footer { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+  .tag { font-size: 11px; font-weight: 500; background: var(--tag-bg); color: var(--tag-text); padding: 2px 8px; border-radius: 4px; }
+  .tat-tag { font-size: 11px; font-weight: 500; background: var(--success-bg); color: var(--success); padding: 2px 8px; border-radius: 4px; margin-left: auto; }
+
+  /* ── Detail Panel ── */
+  .detail-overlay {
+    position: fixed; inset: 0; background: rgba(10,5,25,0.45);
+    z-index: 200; display: none;
+    backdrop-filter: blur(3px);
+  }
+
+  .detail-overlay.open { display: flex; align-items: flex-start; justify-content: flex-end; }
+
+  .detail-panel {
+    background: var(--surface); width: 580px; max-width: 95vw;
+    height: 100vh; overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    display: flex; flex-direction: column;
+    animation: slideIn 0.22s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(40px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .detail-header {
+    padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+  }
+
+  .detail-header-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+  .close-btn {
+    margin-left: auto; background: none; border: none; cursor: pointer;
+    color: var(--text3); padding: 4px; border-radius: 4px;
+    transition: all 0.15s; display: flex;
+  }
+
+  .close-btn:hover { background: var(--surface3); color: var(--text); }
+
+  .detail-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; line-height: 1.3; }
+  .detail-desc { font-size: 13.5px; color: var(--text2); line-height: 1.6; margin-top: 8px; }
+  .detail-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  .meta-chip {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--text3);
+    background: var(--surface2); padding: 3px 10px; border-radius: 4px;
+  }
+
+  .meta-chip svg { width: 12px; height: 12px; }
+
+  .detail-body { padding: 20px 24px; flex: 1; }
+
+  .detail-tabs {
+    display: flex; gap: 2px; background: var(--surface2);
+    border-radius: 8px; padding: 3px; margin-bottom: 16px;
+  }
+
+  .detail-tab {
+    flex: 1; padding: 7px 10px; text-align: center;
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    cursor: pointer; border-radius: 6px; transition: all 0.15s;
+    border: none; background: none;
+  }
+
+  .detail-tab.active {
+    background: var(--surface); color: var(--brand);
+    font-weight: 700; box-shadow: var(--shadow-sm);
+  }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  .section-block { margin-bottom: 20px; }
+
+  .section-block-title {
+    font-size: 11px; font-weight: 700; color: var(--text3);
+    letter-spacing: 0.8px; text-transform: uppercase;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+
+  .section-block-title svg { width: 13px; height: 13px; }
+
+  .content-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13.5px; color: var(--text); line-height: 1.7; white-space: pre-wrap;
+  }
+
+  .warning-box {
+    background: var(--warning-bg); border: 1px solid #FDE68A;
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13.5px; color: #92400E; line-height: 1.7; white-space: pre-wrap;
+  }
+
+  .faq-box {
+    background: var(--success-bg); border: 1px solid #A7F3D0;
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13.5px; color: #065F46; line-height: 1.7; white-space: pre-wrap;
+  }
+
+  .escalation-row {
+    display: flex; gap: 8px; align-items: flex-start;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 6px;
+  }
+
+  .esc-icon { font-size: 16px; flex-shrink: 0; }
+
+  .esc-channel {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; font-weight: 600; color: var(--brand);
+  }
+
+  .esc-tags { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  .tat-badge {
+    margin-left: auto; flex-shrink: 0;
+    font-size: 12px; font-weight: 600;
+    background: var(--success-bg); color: var(--success);
+    padding: 2px 10px; border-radius: 4px; white-space: nowrap;
+  }
+
+  /* ── Escalation Table ── */
+  .esc-table {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+
+  .esc-table-row {
+    display: grid; grid-template-columns: 200px 1fr 100px 120px;
+    border-bottom: 1px solid var(--border); transition: background 0.15s;
+  }
+
+  .esc-table-row:last-child { border-bottom: none; }
+  .esc-table-row:not(.header):hover { background: var(--surface2); }
+
+  .esc-table-row.header {
+    background: var(--surface2);
+    font-size: 11px; font-weight: 700; color: var(--text3);
+    letter-spacing: 0.7px; text-transform: uppercase;
+  }
+
+  .esc-cell {
+    padding: 12px 14px; font-size: 13px; color: var(--text);
+    border-right: 1px solid var(--border); display: flex; align-items: center;
+  }
+
+  .esc-cell:last-child { border-right: none; }
+
+  /* ── Quick Reference ── */
+  .qr-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;
+  }
+
+  .qr-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+  }
+
+  .qr-topic { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .qr-info { font-size: 12.5px; color: var(--text2); line-height: 1.5; margin-bottom: 8px; }
+  .qr-footer { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .qr-tat { font-size: 11px; font-weight: 500; background: var(--success-bg); color: var(--success); padding: 2px 8px; border-radius: 4px; }
+  .qr-esc { font-size: 11px; font-weight: 500; font-family: 'DM Mono', monospace; background: var(--brand-light); color: var(--brand); padding: 2px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state svg { width: 40px; height: 40px; margin: 0 auto 12px; display: block; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── Category colors ── */
+  .cat-Account { --cat-color: #6C2BD9; }
+  .cat-Transaction { --cat-color: #0EA5E9; }
+  .cat-Delivery { --cat-color: #F59E0B; }
+  .cat-Fraud { --cat-color: #EF4444; }
+  .cat-Onboarding { --cat-color: #10B981; }
+  .cat-Rewards { --cat-color: #EC4899; }
+  .cat-General { --cat-color: #8B5CF6; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* ── Last synced ── */
+  #lastSynced { font-size: 11px; color: var(--text3); }
+
+  @media (max-width: 768px) {
+    aside { display: none; }
+    .sop-grid { grid-template-columns: 1fr; }
+    .detail-panel { width: 100vw; }
+    .esc-table-row { grid-template-columns: 160px 1fr; }
+    .esc-cell:nth-child(3), .esc-cell:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loadingScreen">
+  <div class="loader-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+  </div>
+  <h2>slice DSA · SOP Guide</h2>
+  <div id="loadingStatus">Connecting to SharePoint…</div>
+  <div class="progress-bar"><div class="progress-fill"></div></div>
+</div>
+
+<!-- Error Screen -->
+<div id="errorScreen">
+  <div class="err-icon">⚠️</div>
+  <h2>Could not load SOP data</h2>
+  <p id="errorMessage">Unable to connect to the SharePoint list. Make sure you are signed into your Microsoft account and have access to the list.</p>
+  <code id="errorDetail" style="max-height:160px;overflow-y:auto;text-align:left;white-space:pre-wrap;"></code>
+  <button class="retry-btn" onclick="init()">↺ Try Again</button>
+</div>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+    </div>
+    <span class="logo-text">slice <span>DSA</span> · SOP Guide</span>
+  </div>
+  <div class="header-divider"></div>
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input id="globalSearch" type="text" placeholder="Search SOPs, keywords, tags, issue types…" autocomplete="off">
+  </div>
+  <div class="header-right">
+    <span id="lastSynced"></span>
+    <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+      Refresh
+    </button>
+    <div class="live-pill">
+      <div class="live-dot"></div>
+      Live
+    </div>
+  </div>
+</header>
+
+<!-- ── App Body ── -->
+<div class="app-body">
+  <aside>
+    <div class="nav-section">
+      <div class="nav-section-label">Views</div>
+      <button class="nav-btn active" onclick="switchView('all', this)" data-view="all">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        All SOPs
+        <span class="nav-count" id="count-all">—</span>
+      </button>
+      <button class="nav-btn" onclick="switchView('escalations', this)" data-view="escalations">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Escalation Directory
+      </button>
+      <button class="nav-btn" onclick="switchView('quickref', this)" data-view="quickref">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Quick Reference
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">By Category</div>
+      <button class="nav-btn" onclick="filterCategory('Account', this)"><span class="cat-dot dot-Account"></span> Account <span class="nav-count" id="c-Account">—</span></button>
+      <button class="nav-btn" onclick="filterCategory('Transaction', this)"><span class="cat-dot dot-Transaction"></span> Transaction <span class="nav-count" id="c-Transaction">—</span></button>
+      <button class="nav-btn" onclick="filterCategory('Delivery', this)"><span class="cat-dot dot-Delivery"></span> Delivery <span class="nav-count" id="c-Delivery">—</span></button>
+      <button class="nav-btn" onclick="filterCategory('Fraud &amp; Security', this)"><span class="cat-dot dot-Fraud"></span> Fraud &amp; Security <span class="nav-count" id="c-Fraud">—</span></button>
+      <button class="nav-btn" onclick="filterCategory('Onboarding', this)"><span class="cat-dot dot-Onboarding"></span> Onboarding <span class="nav-count" id="c-Onboarding">—</span></button>
+      <button class="nav-btn" onclick="filterCategory('Rewards', this)"><span class="cat-dot dot-Rewards"></span> Rewards <span class="nav-count" id="c-Rewards">—</span></button>
+      <button class="nav-btn" onclick="filterCategory('General', this)"><span class="cat-dot dot-General"></span> General <span class="nav-count" id="c-General">—</span></button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Filter by Type</div>
+      <button class="nav-btn" onclick="filterSIT('SIT', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        SIT (Workflow)
+      </button>
+      <button class="nav-btn" onclick="filterSIT('REF', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        REF (Reference)
+      </button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- All SOPs View -->
+    <div id="view-all" class="view active">
+      <div class="section-header">
+        <div>
+          <div class="section-title" id="view-title">All SOPs</div>
+          <div class="section-sub" id="view-sub">Click any card to view full details</div>
+        </div>
+        <div class="result-count" id="result-count"></div>
+      </div>
+      <div class="sop-grid" id="sopGrid"></div>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <p>No SOPs found matching your search.</p>
+      </div>
+    </div>
+
+    <!-- Escalation View -->
+    <div id="view-escalations" class="view">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Escalation Directory</div>
+          <div class="section-sub">All Slack channels and contacts for escalation</div>
+        </div>
+      </div>
+      <div class="esc-table" id="escTable"></div>
+    </div>
+
+    <!-- Quick Reference View -->
+    <div id="view-quickref" class="view">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Quick Reference</div>
+          <div class="section-sub">At-a-glance summaries for common scenarios</div>
+        </div>
+      </div>
+      <div class="qr-grid" id="qrGrid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Detail Panel ── -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <div class="detail-header-top">
+        <span class="card-id" id="d-id"></span>
+        <span class="card-sit" id="d-sit"></span>
+        <button class="close-btn" onclick="closeDetail()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="detail-title" id="d-title"></div>
+      <div class="detail-desc" id="d-desc"></div>
+      <div class="detail-meta" id="d-meta"></div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-tabs">
+        <button class="detail-tab active" onclick="switchTab('workflow', this)">Workflow</button>
+        <button class="detail-tab" onclick="switchTab('checks', this)">Pre-Checks</button>
+        <button class="detail-tab" onclick="switchTab('escalate', this)">Escalation</button>
+        <button class="detail-tab" onclick="switchTab('faq', this)">FAQ</button>
+      </div>
+      <div id="tab-workflow" class="tab-pane active"></div>
+      <div id="tab-checks" class="tab-pane"></div>
+      <div id="tab-escalate" class="tab-pane"></div>
+      <div id="tab-faq" class="tab-pane"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const SP_SITE   = 'https://slicepay123.sharepoint.com/sites/DSASOPWebpage';
+const LIST_NAME = 'slice_DSA_SOP_CMS';
+
+
+// SharePoint REST API — fetch all items, filter client-side
+// Note: $filter on unindexed columns and $select with custom names can silently hang — keep it simple
+const SP_API = `${SP_SITE}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=500`;
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let ALL_SOPS = [];
+let currentFilter = { category: null, sit: null, search: '' };
+
+const CAT_COLOR = {
+  'Account': '#6C2BD9', 'Transaction': '#0EA5E9', 'Delivery': '#F59E0B',
+  'Fraud & Security': '#EF4444', 'Onboarding': '#10B981',
+  'Rewards': '#EC4899', 'General': '#8B5CF6'
+};
+
+const CAT_CLASS = {
+  'Account': 'Account', 'Transaction': 'Transaction', 'Delivery': 'Delivery',
+  'Fraud & Security': 'Fraud', 'Onboarding': 'Onboarding',
+  'Rewards': 'Rewards', 'General': 'General'
+};
+
+// ── SHAREPOINT FETCH ─────────────────────────────────────────────────────────
+async function fetchFromSharePoint() {
+  // Timeout after 12 seconds so we never hang silently
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  let res;
+  try {
+    res = await fetch(SP_API, {
+      headers: {
+        'Accept': 'application/json;odata=nometadata',
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out after 12s. The SharePoint site may need you to be signed in first — try opening the SharePoint site in a new tab, then retry here.');
+    }
+    throw new Error(`Network error: ${err.message}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => res.statusText);
+    throw new Error(`HTTP ${res.status} from:\n${SP_API}\n\nResponse:\n${txt.slice(0, 500)}`);
+  }
+
+  const json = await res.json();
+
+  if (!json.value) {
+    throw new Error(`SharePoint returned unexpected data (no "value" array).\n\nResponse: ${JSON.stringify(json).slice(0, 300)}`);
+  }
+
+  // Filter approved rows client-side (avoids OData filter issues on unindexed columns)
+  const rows = json.value.filter(r => !r.Approval_Status || r.Approval_Status === 'Approved');
+
+  return rows.map(r => ({
+    id:                 r.SOP_ID           || '',
+    category:           r.Category         || '',
+    sit:                r.SIT_Label        || '',
+    title:              r.SOP_Title        || '',
+    description:        r.Issue_Description|| '',
+    preChecks:          r.Pre_Checks       || '',
+    advisorWorkflow:    r.Advisor_Workflow  || '',
+    backendWorkflow:    r.Backend_Workflow  || '',
+    escalationChannel:  r.Escalation_Channel || '',
+    escalationTags:     r.Escalation_Tags  || '',
+    tat:                r.TAT_SLA          || '',
+    warnings:           r.Warnings_Alerts  || '',
+    faq:                r.FAQ_Responses    || '',
+    tags:               r.Tags_Keywords    || '',
+    lastUpdated:        r.Last_Updated ? String(r.Last_Updated).slice(0,10) : '',
+    version:            r.Version          || '',
+  }));
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  document.getElementById('loadingScreen').style.display = 'flex';
+  document.getElementById('errorScreen').style.display   = 'none';
+  document.getElementById('loadingStatus').textContent   = 'Connecting to SharePoint…';
+
+  try {
+    document.getElementById('loadingStatus').textContent = 'Fetching SOP data…';
+    ALL_SOPS = await fetchFromSharePoint();
+
+    document.getElementById('loadingStatus').textContent = 'Rendering…';
+    updateCategoryCounts();
+    applyFilters();
+    renderEscalations();
+    renderQuickRef();
+
+    const now = new Date();
+    document.getElementById('lastSynced').textContent =
+      `Synced ${now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'})}`;
+
+    document.getElementById('loadingScreen').style.display = 'none';
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('errorScreen').style.display   = 'flex';
+    document.getElementById('errorDetail').textContent     = err.message;
+
+    const isAuth = err.message.includes('401') || err.message.includes('403');
+    document.getElementById('errorMessage').textContent = isAuth
+      ? 'Access denied. Please make sure you are signed into your Microsoft / SharePoint account in this browser, then click Try Again.'
+      : 'Could not reach the SharePoint list. Check your network connection or contact your SharePoint admin.';
+  }
+}
+
+async function refreshData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  try {
+    ALL_SOPS = await fetchFromSharePoint();
+    updateCategoryCounts();
+    applyFilters();
+    const now = new Date();
+    document.getElementById('lastSynced').textContent =
+      `Synced ${now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'})}`;
+  } catch(err) {
+    alert('Refresh failed: ' + err.message);
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+// ── COUNTS ───────────────────────────────────────────────────────────────────
+function updateCategoryCounts() {
+  const cats = ['Account','Transaction','Delivery','Fraud & Security','Onboarding','Rewards','General'];
+  const classMap = {'Fraud & Security':'Fraud'};
+  cats.forEach(cat => {
+    const cls = classMap[cat] || cat;
+    const el = document.getElementById('c-' + cls);
+    if (el) el.textContent = ALL_SOPS.filter(s => s.category === cat).length;
+  });
+  document.getElementById('count-all').textContent = ALL_SOPS.length;
+}
+
+// ── RENDER SOPS ──────────────────────────────────────────────────────────────
+function renderSOPs(sops) {
+  const grid    = document.getElementById('sopGrid');
+  const empty   = document.getElementById('emptyState');
+  const countEl = document.getElementById('result-count');
+  grid.innerHTML = '';
+
+  if (!sops.length) {
+    empty.style.display = 'block';
+    countEl.textContent = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  countEl.textContent = `${sops.length} SOP${sops.length !== 1 ? 's' : ''}`;
+
+  sops.forEach(sop => {
+    const catClass = CAT_CLASS[sop.category] || 'General';
+    const color    = CAT_COLOR[sop.category] || '#8B5CF6';
+    const card     = document.createElement('div');
+    card.className = `sop-card cat-${catClass}`;
+    card.style.setProperty('--cat-color', color);
+    card.onclick   = () => openDetail(sop);
+    card.innerHTML = `
+      <div class="card-top">
+        <span class="card-id">${sop.id}</span>
+        <span class="card-sit ${sop.sit}">${sop.sit}</span>
+      </div>
+      <div class="card-title">${sop.title}</div>
+      <div class="card-desc">${sop.description || '—'}</div>
+      <div class="card-footer">
+        <span class="tag">${sop.category}</span>
+        ${sop.tat ? `<span class="tat-tag">⏱ ${sop.tat}</span>` : ''}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── FILTER & SEARCH ──────────────────────────────────────────────────────────
+function applyFilters() {
+  let result = ALL_SOPS;
+
+  if (currentFilter.category)
+    result = result.filter(s => s.category === currentFilter.category);
+
+  if (currentFilter.sit)
+    result = result.filter(s => s.sit === currentFilter.sit);
+
+  if (currentFilter.search) {
+    const q = currentFilter.search.toLowerCase();
+    result = result.filter(s =>
+      [s.title, s.description, s.tags, s.id,
+       s.advisorWorkflow, s.preChecks, s.warnings, s.faq, s.category]
+        .some(f => f && f.toLowerCase().includes(q))
+    );
+  }
+
+  renderSOPs(result);
+}
+
+document.getElementById('globalSearch').addEventListener('input', function() {
+  currentFilter.search = this.value.trim();
+  const allView = document.getElementById('view-all');
+  if (!allView.classList.contains('active')) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    allView.classList.add('active');
+  }
+  document.getElementById('view-title').textContent =
+    currentFilter.search ? 'Search Results' : 'All SOPs';
+  document.getElementById('view-sub').textContent =
+    currentFilter.search ? `Matching "${currentFilter.search}"` : 'Click any card to view full details';
+  applyFilters();
+});
+
+function filterCategory(cat, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-all').classList.add('active');
+  currentFilter.category = currentFilter.category === cat ? null : cat;
+  currentFilter.sit = null;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (currentFilter.category) {
+    btn.classList.add('active');
+    document.getElementById('view-title').textContent = cat;
+  } else {
+    document.querySelector('[data-view="all"]').classList.add('active');
+    document.getElementById('view-title').textContent = 'All SOPs';
+  }
+  document.getElementById('view-sub').textContent = 'Click any card to view full details';
+  applyFilters();
+}
+
+function filterSIT(sit, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-all').classList.add('active');
+  currentFilter.sit = currentFilter.sit === sit ? null : sit;
+  currentFilter.category = null;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (currentFilter.sit) {
+    btn.classList.add('active');
+    document.getElementById('view-title').textContent = sit === 'SIT' ? 'SIT — Workflow SOPs' : 'REF — Reference Guides';
+  } else {
+    document.querySelector('[data-view="all"]').classList.add('active');
+    document.getElementById('view-title').textContent = 'All SOPs';
+  }
+  document.getElementById('view-sub').textContent = 'Click any card to view full details';
+  applyFilters();
+}
+
+function switchView(view, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (view === 'all') {
+    currentFilter.category = null; currentFilter.sit = null;
+    document.getElementById('view-title').textContent = 'All SOPs';
+    document.getElementById('view-sub').textContent = 'Click any card to view full details';
+    applyFilters();
+  }
+}
+
+// ── DETAIL PANEL ─────────────────────────────────────────────────────────────
+function openDetail(sop) {
+  document.getElementById('d-id').textContent = sop.id;
+  const sitEl = document.getElementById('d-sit');
+  sitEl.textContent = sop.sit; sitEl.className = `card-sit ${sop.sit}`;
+  document.getElementById('d-title').textContent = sop.title;
+  document.getElementById('d-desc').textContent  = sop.description || '';
+  document.getElementById('d-meta').innerHTML = `
+    <div class="meta-chip">${sop.category}</div>
+    ${sop.tat ? `<div class="meta-chip">⏱ ${sop.tat}</div>` : ''}
+    <div class="meta-chip">v${sop.version}${sop.lastUpdated ? ' · ' + sop.lastUpdated : ''}</div>`;
+
+  document.getElementById('tab-workflow').innerHTML = `
+    <div class="section-block">
+      <div class="section-block-title">Advisor Workflow</div>
+      <div class="content-box">${sop.advisorWorkflow || 'No advisor workflow defined.'}</div>
+    </div>
+    ${sop.backendWorkflow ? `<div class="section-block"><div class="section-block-title">Backend Workflow</div><div class="content-box">${sop.backendWorkflow}</div></div>` : ''}
+    ${sop.warnings ? `<div class="section-block"><div class="section-block-title">⚠ Warnings & Alerts</div><div class="warning-box">${sop.warnings}</div></div>` : ''}`;
+
+  document.getElementById('tab-checks').innerHTML = sop.preChecks
+    ? `<div class="section-block"><div class="section-block-title">Pre-Checks</div><div class="content-box">${sop.preChecks}</div></div>`
+    : '<div class="empty-state"><p>No pre-checks defined for this SOP.</p></div>';
+
+  const escRows = [];
+  if (sop.escalationChannel) escRows.push(`<div class="escalation-row"><span class="esc-icon">📢</span><div><div class="esc-channel">${sop.escalationChannel}</div><div class="esc-tags">Primary channel</div></div>${sop.tat ? `<div class="tat-badge">${sop.tat}</div>` : ''}</div>`);
+  if (sop.escalationTags)    escRows.push(`<div class="escalation-row"><span class="esc-icon">🏷️</span><div><div class="esc-channel">${sop.escalationTags}</div><div class="esc-tags">Tags / Contacts</div></div></div>`);
+  document.getElementById('tab-escalate').innerHTML = escRows.length
+    ? `<div class="section-block"><div class="section-block-title">Escalation Path</div>${escRows.join('')}</div>`
+    : '<div class="empty-state"><p>No specific escalation path. Follow standard procedure.</p></div>';
+
+  document.getElementById('tab-faq').innerHTML = sop.faq
+    ? `<div class="section-block"><div class="section-block-title">FAQ & Common Errors</div><div class="faq-box">${sop.faq}</div></div>`
+    : '<div class="empty-state"><p>No FAQ entries for this SOP.</p></div>';
+
+  switchTab('workflow', document.querySelector('.detail-tab'));
+  document.getElementById('detailOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail(e) {
+  if (!e || e.target === document.getElementById('detailOverlay')) {
+    document.getElementById('detailOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.detail-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDetail({ target: document.getElementById('detailOverlay') });
+});
+
+// ── ESCALATION DIRECTORY (static — update if needed) ──────────────────────
+const ESCALATIONS = [{"channel":"#cx_insight-hub","platform":"Slack","purpose":"General investigation & escalation hub","whenToUse":"TAT breaches, pending rewards, ATM issues, transaction failures","tat":"Varies"},{"channel":"@cx_internal_fia","platform":"Slack","purpose":"FIA fraud investigation","whenToUse":"Removable freeze, CAM TXN, fraud cases, credit freeze from FCU","tat":"Investigation"},{"channel":"@fraud-ops-oncall","platform":"Slack","purpose":"Fraud operations on-call","whenToUse":"UPIUUID freeze, total/debit freeze FD withdrawal, fraud hold","tat":"Investigation"},{"channel":"#card_delivery_escalation","platform":"Slack","purpose":"Card delivery issues","whenToUse":"TAT breached, damaged cards, lost shipments, RTO cases","tat":"48 hours"},{"channel":"@card_delivery_issues","platform":"Slack","purpose":"Delivery vendor complaints","whenToUse":"Exec misbehavior, RTO no-contact, delivery disputes","tat":"48 hours"},{"channel":"@dsa-tls","platform":"Slack","purpose":"DSA Team Leads","whenToUse":"Refund approval (>30 days), RTO refunds, address/name changes","tat":"Same day"},{"channel":"#dsa_team","platform":"Slack","purpose":"DSA operations team","whenToUse":"Lien checks, freeze cases, number change escalations","tat":"Same day"},{"channel":"@retention-oncall","platform":"Slack","purpose":"Retention team on-call","whenToUse":"Missing referral rewards, pending fire rewards","tat":"Investigation"},{"channel":"@upisw-oncall","platform":"Slack","purpose":"UPI switch on-call","whenToUse":"Txn TAT breach refunds, transaction failures","tat":"Investigation"},{"channel":"@a2platform-on-call","platform":"Slack","purpose":"Platform team on-call","whenToUse":"UPI SIM binding failures, verification issues","tat":"Investigation"},{"channel":"@cts-cms-oncall","platform":"Slack","purpose":"Card technology support","whenToUse":"ATM chip card errors, card technology issues","tat":"Investigation"},{"channel":"@finops_payments","platform":"Slack","purpose":"FinOps payments team","whenToUse":"IMPS wrong transfers, chargeback processing","tat":"35-40 days"},{"channel":"CPC team","platform":"Freshdesk","purpose":"Central Processing Centre","whenToUse":"Death claims, FD pre-closure (closed SA), service requests","tat":"Processing"},{"channel":"@Rakesh Dutta","platform":"Slack","purpose":"Residual balance debit","whenToUse":"Account closure with balance < ₹1","tat":"Same day"},{"channel":"@Mr. Krishnan / @SH","platform":"Slack","purpose":"Refund approval","whenToUse":"Card refunds for blocked/reissued cards (RTO)","tat":"Same day"},{"channel":"@Srikar Kotipalli / @Aashish","platform":"Slack","purpose":"PAN-Aadhaar issues","whenToUse":"PAN-Aadhaar linking issues >10 days old","tat":"Investigation"},{"channel":"@Gopi Mannem","platform":"Slack","purpose":"EDD cases","whenToUse":"EDD freeze cases with DA_Non_removable tag","tat":"Investigation"},{"channel":"SWAT Team","platform":"Slack","purpose":"CERSAI/CKYCR","whenToUse":"CERSAI-related user concerns","tat":"Investigation"},{"channel":"VKYC Team","platform":"Slack","purpose":"Video KYC","whenToUse":"VKYC pending >48h, audit pending cases","tat":"48 hours"}];
+
+const QUICK_REF = [{"topic":"Freeze — Removable","keyInfo":"Ticket → CX-Internal-FIA","tat":"Varies","escalation":"@cx_internal_fia"},{"topic":"Freeze — Non-removable","keyInfo":"Inform user: cannot be lifted","tat":"—","escalation":"—"},{"topic":"Freeze — LEA","keyInfo":"Share ack number, cannot remove","tat":"—","escalation":"—"},{"topic":"Freeze — Device Lost","keyInfo":"On Hold → tag @cx_internal_fia → CAM selfie","tat":"Investigation","escalation":"@cx_internal_fia"},{"topic":"Number Change","keyInfo":"Pre-checks (30d/1yr/no freeze/no DCA) → OTP → selfie → update","tat":"Immediate","escalation":"FIA if errors"},{"topic":"Account Closure","keyInfo":"Pre-checks → retention attempt → Spacce delete → 1h auto-close","tat":"1 hour","escalation":"@Rakesh Dutta (<₹1)"},{"topic":"Death Claim","keyInfo":"Nominee/no-nominee → docs → child ticket to CPC","tat":"CPC time","escalation":"CPC team"},{"topic":"P2P Chargeback","keyInfo":"MCC 0000 check → within 45d → form → 35-40d wait","tat":"35-40 days","escalation":"@finops_payments"},{"topic":"Txn Not Credited","keyInfo":"Check 72h → if breached → #insights_hub","tat":"72 hours","escalation":"#insights_hub"},{"topic":"Txn Failed + Debited","keyInfo":"Auto refund 72h → if breached → @upisw-oncall","tat":"72 hours","escalation":"@upisw-oncall"},{"topic":"Card Delivery","keyInfo":"₹299, 7-10 days, tracking in Spacce","tat":"7-10 days","escalation":"#card_delivery_escalation"},{"topic":"RTO","keyInfo":"Child ticket + form → 48h Shiprocket → refund if >12d/25d","tat":"48h → 12/25 days","escalation":"@dsa-tls"},{"topic":"Fraud Report","keyInfo":"FREEZE IMMEDIATELY → cybercrime.gov.in/1930 → FIA","tat":"Immediate freeze","escalation":"Account FIA Fraud"},{"topic":"CAM Selfie","keyInfo":"10 retries → CX FIA for extra → CAMWHITELIST check","tat":"FIA review","escalation":"@cx_internal_fia"},{"topic":"DSA Opening","keyInfo":"18+ / PAN+Aadhaar / VKYC → minutes to 48h","tat":"48 hours max","escalation":"VKYC Team"},{"topic":"Invite & Earn","keyInfo":"6 checks → ₹150 to DSA → 10/month cap","tat":"Auto","escalation":"#retention-oncall"},{"topic":"Fire Rewards","keyInfo":"5/day (excl CC UPI) → 24h buffer → Abusers check","tat":"24 hours","escalation":"@retention-on-call"},{"topic":"FD Premature Close","keyInfo":"1% penalty (0% within 7d) → lower for monthly payout","tat":"Immediate","escalation":"—"},{"topic":"ATM Failure","keyInfo":"Auto-reversal T+1 to T+3 → if not → chargeback form","tat":"T+1 to T+3","escalation":"@cts-cms-oncall"},{"topic":"UPI SIM Binding","keyInfo":"Mobile data + Slot 1 + active SIM + app update → retry","tat":"Platform TAT","escalation":"@a2platform-on-call"}];
+
+function renderEscalations() {
+  document.getElementById('escTable').innerHTML = `
+    <div class="esc-table-row header">
+      <div class="esc-cell">Channel / Contact</div>
+      <div class="esc-cell">Purpose &amp; When to Use</div>
+      <div class="esc-cell">Platform</div>
+      <div class="esc-cell">TAT</div>
+    </div>
+    ${ESCALATIONS.map(e => `
+      <div class="esc-table-row">
+        <div class="esc-cell"><span class="esc-channel">${e.channel}</span></div>
+        <div class="esc-cell" style="flex-direction:column;align-items:flex-start;gap:2px;">
+          <div style="font-weight:600;font-size:13px;">${e.purpose}</div>
+          <div style="font-size:12px;color:var(--text2);">${e.whenToUse}</div>
+        </div>
+        <div class="esc-cell" style="font-size:12px;color:var(--text2);">${e.platform}</div>
+        <div class="esc-cell"><span class="tat-badge">${e.tat}</span></div>
+      </div>`).join('')}`;
+}
+
+function renderQuickRef() {
+  document.getElementById('qrGrid').innerHTML = QUICK_REF.map(q => `
+    <div class="qr-card">
+      <div class="qr-topic">${q.topic}</div>
+      <div class="qr-info">${q.keyInfo}</div>
+      <div class="qr-footer">
+        ${q.tat && q.tat !== '—' ? `<span class="qr-tat">⏱ ${q.tat}</span>` : ''}
+        ${q.escalation && q.escalation !== '—' ? `<span class="qr-esc">${q.escalation}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
